@@ -42,13 +42,13 @@ func updateSteamData(steamClient *steam.Client, db *db.DB) {
 	var start int
 	for {
 		for i := 0; i < 25; i++ {
-			itemMap, err := steamClient.FetchSteamPrices(start)
+			itemSlice, err := steamClient.FetchSteamPrices(start)
 			if err != nil {
 				log.Printf("Ошибка при попытке парсинга steam цен: %v", err)
 				continue
 			}
-			for name, price := range itemMap {
-				if err = db.SaveSteamPrice(name, price); err != nil {
+			for _, item := range itemSlice {
+				if err = db.SaveSteamPrice(item.Name, item.Price, item.IconID); err != nil {
 					log.Printf("Ошибка при попытке записи в базу steam данных: %v", err)
 				}
 			}

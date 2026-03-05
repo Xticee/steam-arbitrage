@@ -15,16 +15,16 @@ type Client struct {
 }
 
 type steamItem struct {
-	name  string
-	price float64
+	Name   string
+	Price  float64
+	IconID string
 }
 
 func NewClient(http *http.Client) *Client {
 	return &Client{http: http}
 }
 
-func (c *Client) FetchSteamPrices(start int) (map[string]float64, error) {
-	var itemsMap = make(map[string]float64)
+func (c *Client) FetchSteamPrices(start int) ([]steamItem, error) {
 	var raw struct {
 		Result []steamItem `json:"results"`
 	}
@@ -49,17 +49,16 @@ func (c *Client) FetchSteamPrices(start int) (map[string]float64, error) {
 		return nil, err
 	}
 
-	for _, item := range raw.Result {
-		itemsMap[item.name] = item.price
-	}
-
-	return itemsMap, nil
+	return raw.Result, nil
 }
 
 func (i *steamItem) UnmarshalJSON(data []byte) error {
 	var raw struct {
 		Name  string `json:"name"`
 		Price int    `json:"sell_price"`
+		Asset struct {
+			IconId string `json:"icon_url"`
+		} `json:"asset_description"`
 	}
 
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -67,8 +66,9 @@ func (i *steamItem) UnmarshalJSON(data []byte) error {
 	}
 	floatPrice := float64(raw.Price) / 100
 
-	i.name = raw.Name
-	i.price = floatPrice
+	i.Name = raw.Name
+	i.Price = floatPrice
+	i.IconID = raw.Asset.IconId
 
 	return nil
 }

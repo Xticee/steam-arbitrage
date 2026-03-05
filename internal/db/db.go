@@ -37,16 +37,17 @@ func (d *DB) SaveMarketPrice(name string, marketPrice float64) error {
 	return err
 }
 
-func (d *DB) SaveSteamPrice(name string, steamPrice float64) error {
+func (d *DB) SaveSteamPrice(name string, steamPrice float64, iconId string) error {
 	query := `
-	INSERT INTO items (name, steam_price)
-	VALUES ($1, $2)
+	INSERT INTO items (name, steam_price, icon_id)
+	VALUES ($1, $2, $3)
 	ON CONFLICT (name) DO UPDATE SET
 		steam_price = $2,
-		steam_balance = EXCLUDED.steam_price * 0.87,
+		steam_balance = $2 * 0.87,
 		profit = $2 * 0.87 - items.rust_tm_price * 1.05821,
+		icon_id = $3,
 		updated_at = NOW()`
-	_, err := d.conn.Exec(query, name, steamPrice)
+	_, err := d.conn.Exec(query, name, steamPrice, iconId)
 
 	return err
 }

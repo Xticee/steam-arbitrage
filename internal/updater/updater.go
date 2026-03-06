@@ -3,19 +3,19 @@ package updater
 import (
 	"log"
 	"parser/internal/db"
-	"parser/internal/rusttm"
+	"parser/internal/market"
 	"parser/internal/steam"
 	"time"
 )
 
 const totalSteamItems = 5120
 
-func Run(db *db.DB, marketClient *rusttm.Client, steamClient *steam.Client) {
+func Run(db *db.DB, marketClient *market.Client, steamClient *steam.Client) {
 	go updateMarketData(marketClient, db)
-	updateSteamData(steamClient, db)
+	go updateSteamData(steamClient, db)
 }
 
-func updateMarketData(marketClient *rusttm.Client, db *db.DB) {
+func updateMarketData(marketClient *market.Client, db *db.DB) {
 	ticker := time.NewTicker(10 * time.Minute)
 	defer ticker.Stop()
 

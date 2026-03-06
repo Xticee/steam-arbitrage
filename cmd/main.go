@@ -4,12 +4,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"parser/internal/api"
 	"parser/internal/db"
-	"parser/internal/rusttm"
+	"parser/internal/market"
 	"parser/internal/steam"
 	"parser/internal/updater"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 )
 
@@ -20,17 +22,19 @@ func main() {
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
-	marketClient := rusttm.NewClient(client)
-	steamClient := steam.NewClient(client)
+	marketClient := market.NewClient(client)
+	steamClient := steam.NewClient(client, os.Getenv("STEAM_COOKIES"))
 
-	connStr := os.Getenv("DB_CONN")
-	itemsBase, err := db.NewDb(connStr)
+	itemsBase, err := db.NewDb(os.Getenv("DB_CONN"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	updater.Run(itemsBase, marketClient, steamClient)
-	if err != nil {
-		log.Fatal(err)
-	}
+
+	router := chi.NewRouter()
+	handler := api.NewHandler(itemsBase)
+	router.Get("/", handler.GeneralPage)
+	router.Get("/search", handler.GetItems)
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
